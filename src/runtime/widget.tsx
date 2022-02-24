@@ -183,6 +183,8 @@ export default class Widget extends React.PureComponent<AllWidgetProps<{}> & Ext
     }
   }
 
+  
+
   mapNode = <div className="widget-map" style={{ width: '100%', height: '100%' }} ref={this.mapContainer}></div>
 
   render () {

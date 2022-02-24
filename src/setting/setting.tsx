@@ -22,6 +22,8 @@ export default class Setting extends React.PureComponent<AllWidgetSettingProps<{
     })
   }
 
+  
+
   supportedTypes = Immutable([ArcGISDataSourceTypes.WebMap])
   dsManager = DataSourceManager.getInstance()
 
