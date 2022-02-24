@@ -17,19 +17,27 @@
   A copy of the license is available in the repository's
   LICENSE file.
 */
-import { React, jimuHistory, DataSourceComponent, AllWidgetProps, IMState, IMUrlParameters } from 'jimu-core'
-import MapView from 'esri/views/MapView'
+import { React, jimuHistory, DataSourceComponent, AllWidgetProps, IMState, IMUrlParameters,css} from 'jimu-core'
+import MapView from 'esri/views/MapView' 
 import WebMap from 'esri/WebMap'
 import Extent from 'esri/geometry/Extent'
 import Polygon from 'esri/geometry/Polygon'
 import Graphic from 'esri/Graphic'
+import defaultMessages from './translations/default';
 import { MapViewManager, WebMapDataSource, JimuMapViewComponent, JimuMapView } from 'jimu-arcgis'
+import { WidgetPlaceholder } from 'jimu-ui';
+import Slider from 'esri/widgets/Slider'
+const alertIcon = require('./assets/alert.svg');
+
 
 interface ExtraProps {
   queryObject: IMUrlParameters
 }
 
 export default class Widget extends React.PureComponent<AllWidgetProps<{}> & ExtraProps, {}> {
+  nls = (id: string) => {
+    return this.props.intl ? this.props.intl.formatMessage({ id: id, defaultMessage: defaultMessages[id] }) : id;
+  }
   mapContainer = React.createRef<HTMLDivElement>()
   mapView: MapView
   webMap: WebMap
@@ -47,11 +55,15 @@ export default class Widget extends React.PureComponent<AllWidgetProps<{}> & Ext
     if (!this.extentWatch2) {
       this.extentWatch2 = jimuMapView.view.watch('zoom', zoom => {
         const mainView = jimuMapView.view
+
+        this.mapView.ui.remove("attribution");
         this.mapView.goTo({
           center: mainView.center,
+          
           scale: mainView.scale * 2 * Math.max(mainView.width /
           this.mapView.width,
-          mainView.height / this.mapView.height)
+          mainView.height / this.mapView.height),
+        
         })
       })
 
@@ -86,8 +98,11 @@ export default class Widget extends React.PureComponent<AllWidgetProps<{}> & Ext
           geometry: poly,
           symbol: symbol
         })
-
-        this.mapView.graphics.add(this.graphic)
+        if(jimuMapView.view.zoom>3){
+          this.mapView.graphics.add(this.graphic)
+        }
+        //this.mapView.graphics.add(this.graphic)
+        
       })
     }
   }
@@ -98,7 +113,7 @@ export default class Widget extends React.PureComponent<AllWidgetProps<{}> & Ext
 
   disableZooming = (view: MapView) => {
     view.popup.dockEnabled = true
-
+    view.ui.components = ['zoom']
     view.ui.components = ['attribution']
 
     // disable mouse wheel scroll zooming on the view
@@ -148,7 +163,7 @@ export default class Widget extends React.PureComponent<AllWidgetProps<{}> & Ext
     if (!this.mvManager.getJimuMapViewById(this.props.id)) {
       const options: __esri.MapViewProperties = {
         map: webmapDs.map,
-        container: this.mapContainer.current
+        container: this.mapContainer.current,
       }
       if (this.props.queryObject?.[this.props.id]) {
         const extentStr = this.props.queryObject[this.props.id].substr('extent='.length)
@@ -163,14 +178,20 @@ export default class Widget extends React.PureComponent<AllWidgetProps<{}> & Ext
           options.extent = extent
         }
       }
+      
       this.mapView = new MapView(options)
-      this.mapView.ui.components = ['attribution']
+      this.mapView.ui.remove("zoom");
+      this.mapView.ui.remove("attribution");
+      //this.mapView.ui.components = ['attribution']
       this.disableZooming(this.mapView)
       this.mvManager.createJimuMapView({
         mapWidgetId: this.props.id,
         view: this.mapView,
         dataSourceId: webmapDs.id,
-        isActive: true
+        isActive: true,
+    
+        
+
       }).then(jimuMapView => {
         if (!this.extentWatch) {
           this.extentWatch = jimuMapView.view.watch('extent', (extent: __esri.Extent) => {
@@ -183,19 +204,20 @@ export default class Widget extends React.PureComponent<AllWidgetProps<{}> & Ext
     }
   }
 
-  
-
   mapNode = <div className="widget-map" style={{ width: '100%', height: '100%' }} ref={this.mapContainer}></div>
 
-  render () {
+  render() {
+  
     if (!this.props.useDataSources || this.props.useDataSources.length === 0) {
-      return 'Select a webmap in the settings panel'
+      return <WidgetPlaceholder icon={alertIcon } message={defaultMessages.chooseAttribute} />;
     }
+    //
     return <div className="overview-map-view" style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
         <DataSourceComponent useDataSource={this.props.useDataSources[0]} onDataSourceCreated={this.onDsCreated}>
             {this.mapNode}
         </DataSourceComponent>
         <JimuMapViewComponent useMapWidgetId={this.props.useMapWidgetIds?.[0]} onActiveViewChange={this.onActiveViewChange}></JimuMapViewComponent>
+    
         </div>
   }
 }
