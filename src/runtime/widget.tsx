@@ -49,9 +49,7 @@ export default class Widget extends React.PureComponent<AllWidgetProps<{}> & Ext
         const mainView = jimuMapView.view
         this.mapView.goTo({
           center: mainView.center,
-          scale: mainView.scale * 2 * Math.max(mainView.width /
-          this.mapView.width,
-          mainView.height / this.mapView.height)
+          scale: mainView.scale * 2 * Math.max(mainView.width /this.mapView.width, mainView.height / this.mapView.height)
         })
       })
 
@@ -80,6 +78,7 @@ export default class Widget extends React.PureComponent<AllWidgetProps<{}> & Ext
             width: 1
           }
         }
+        
         this.mapView.graphics.remove(this.graphic)
 
         this.graphic = new Graphic({
